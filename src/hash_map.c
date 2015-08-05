@@ -142,9 +142,9 @@ EXIT:
 
 int32_t HashMapPut(HashMap *self, Entry ent, size_t sizeKey)
 {
+    CHECK_INIT(self);
     if (sizeKey == 0)
         return ERR_KEYSIZE;
-    CHECK_INIT(self);
     HashMapData *pData = self->pData;
 
     /* Resolve the bucket index with modulo arithmetics. */
@@ -160,15 +160,13 @@ int32_t HashMapPut(HashMap *self, Entry ent, size_t sizeKey)
     LinkedList *listSlot;
     vecBucket->get(vecBucket, (Item*)&listSlot, iIdx);
 
-    /* Replace the existing duplicated entry. */
+    /* Replace the existing entry. */
     Pair *pairDup;
-    iSize = listSlot->size(listSlot);
-    for (iIdx = 0 ; iIdx < iSize ; iIdx++) {
-        listSlot->get_at(listSlot, (Item*)&pairDup, iIdx);
+    listSlot->iterate(listSlot, true, NULL);
+    while (listSlot->iterate(listSlot, false, (Item*)&pairDup) != END) {
         if (memcmp(pairIn->key, pairDup->key, sizeKey) == 0) {
-            listSlot->delete(listSlot, iIdx);
-            pData->iSize_--;
-            break;
+            listSlot->replace(listSlot, pairIn);
+            return SUCC;
         }
     }
 
@@ -181,12 +179,12 @@ int32_t HashMapPut(HashMap *self, Entry ent, size_t sizeKey)
 
 int32_t HashMapGet(HashMap *self, Key key, size_t sizeKey, Value *pValue)
 {
+    CHECK_INIT(self);
     if (!pValue)
         return ERR_GET;
     if (sizeKey == 0)
         return ERR_KEYSIZE;
     *pValue = NULL;
-    CHECK_INIT(self);
 
     /* Resolve the bucket index with modulo arithmetics. */
     Vector *vecBucket = self->pData->vecBucket_;
@@ -202,9 +200,8 @@ int32_t HashMapGet(HashMap *self, Key key, size_t sizeKey, Value *pValue)
 
     /* Retrieve the value corresponding to the designated key. */
     Pair *pPairOut;
-    iSize = listSlot->size(listSlot);
-    for (iIdx = 0 ; iIdx < iSize ; iIdx++) {
-        listSlot->get_at(listSlot, (Item*)&pPairOut, iIdx);
+    listSlot->iterate(listSlot, true, NULL);
+    while (listSlot->iterate(listSlot, false, (Item*)&pPairOut) != END) {
         if (memcmp(key, pPairOut->key, sizeKey) == 0) {
             *pValue = pPairOut->value;
             return SUCC;
@@ -216,9 +213,9 @@ int32_t HashMapGet(HashMap *self, Key key, size_t sizeKey, Value *pValue)
 
 int32_t HashMapRemove(HashMap *self, Key key, size_t sizeKey)
 {
+    CHECK_INIT(self);
     if (sizeKey == 0)
         return ERR_KEYSIZE;
-    CHECK_INIT(self);
     HashMapData *pData = self->pData;
 
     /* Resolve the bucket index with modulo arithmetics. */
@@ -235,14 +232,15 @@ int32_t HashMapRemove(HashMap *self, Key key, size_t sizeKey)
 
     /* Remove the key value pair having the designated key. */
     Pair *pairDel;
-    iSize = listSlot->size(listSlot);
-    for (iIdx = 0 ; iIdx < iSize ; iIdx++) {
-        listSlot->get_at(listSlot, (Item*)&pairDel, iIdx);
+    iIdx = 0;
+    listSlot->iterate(listSlot, true, NULL);
+    while (listSlot->iterate(listSlot, false, (Item*)&pairDel) != END) {
         if (memcmp(key, pairDel->key, sizeKey) == 0) {
             listSlot->delete(listSlot, iIdx);
             pData->iSize_--;
             return SUCC;
         }
+        iIdx++;
     }
 
     return ERR_NODATA;
