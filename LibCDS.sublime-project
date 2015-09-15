@@ -1,0 +1,21 @@
+{
+    "folders":
+    [
+        {
+            "path": "."
+        }
+    ],
+    "build_systems":
+    [
+        {
+            "name": "Build LibCDS",
+            "working_dir": "${project_path}/build",
+            "shell_cmd": "make"
+        },
+        {
+            "name": "Unit_Bloom_filter",
+            "working_dir": "${project_path}/build",
+            "shell_cmd": "make BLOOM_FILTER && make UNIT_BLOOM_FILTER && ../bin/test/unit_bloom_filter"
+        }
+    ]
+}
