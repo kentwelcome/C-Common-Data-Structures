@@ -37,40 +37,62 @@ int32_t BloomFilterInit(BloomFilter **ppObj)
        Based on this information, we create the internal bit array and prepare
        the relevant abount of hash functions. */
 
-    #define TEMP_SIZE_BIT_ARRAY (1)
+    const int   TEMP_SIZE_BIT_ARRAY = 1;
+    int32_t     rc = SUCC;
+    BloomFilter *pNewObj = NULL;
 
-    *ppObj = (BloomFilter*)malloc(sizeof(BloomFilter));
-    if (!(*ppObj))
-        return ERR_NOMEM;
-
-    BloomFilter *pObj = *ppObj;
-    pObj->pData = (BloomFilterData*)malloc(sizeof(BloomFilterData));
-    if (!(pObj->pData)) {
-        free(*ppObj);
-        *ppObj = NULL;
-        return ERR_NOMEM;
+    if (ppObj == NULL) {
+        rc = ERR_NOINIT;
+        goto FAIL;
     }
 
-    BloomFilterData *pData = pObj->pData;
-    pData->aBit_ = (char*)malloc(sizeof(char) * TEMP_SIZE_BIT_ARRAY);
-    if (!(pData->aBit_)) {
-        free(pObj->pData);
-        free(*ppObj);
-        *ppObj = NULL;
-        return ERR_NOMEM;
+    pNewObj = (BloomFilter*)malloc(sizeof(BloomFilter));
+    if (pNewObj == NULL) {
+        rc = ERR_NOMEM;
+        goto FAIL;
     }
+    memset(pNewObj, 0, sizeof(BloomFilter));
 
-    pData->iSize_ = 0;
-    pObj->insert = BloomFilterInsert;
-    pObj->query = BloomFilterQuery;
-    pObj->size = BloomFilterSize;
+    pNewObj->pData = (BloomFilterData*)malloc(sizeof(BloomFilterData));
+    if (!(pNewObj->pData)) {
+        rc = ERR_NOMEM;
+        goto FAIL;
+    }
+    memset(pNewObj->pData, 0, sizeof(BloomFilterData));
+
+    pNewObj->pData->aBit_ = (char*)malloc(sizeof(char) * TEMP_SIZE_BIT_ARRAY);
+    if (!(pNewObj->pData->aBit_)) {
+        rc = ERR_NOMEM;
+        goto FAIL;
+    }
+    memset(pNewObj->pData->aBit_, 0, sizeof(char) * TEMP_SIZE_BIT_ARRAY);
+
+    pNewObj->insert = BloomFilterInsert;
+    pNewObj->query  = BloomFilterQuery;
+    pNewObj->size   = BloomFilterSize;
+
+    *ppObj = pNewObj;
 
     return SUCC;
+
+FAIL:
+    if (pNewObj) {
+        if (pNewObj->pData) {
+            free(pNewObj->pData);
+        }
+        free(pNewObj);
+    }
+
+    if (ppObj) {
+        *ppObj = NULL;
+    }
+    return rc;
 }
 
 void BloomFilterDeinit(BloomFilter **ppObj)
 {
-    if (!(*ppObj))
+
+    if ( ppObj == NULL || *ppObj == NULL)
         goto EXIT;
 
     BloomFilter *pObj = *ppObj;
